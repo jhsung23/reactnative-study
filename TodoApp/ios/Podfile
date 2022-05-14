@@ -19,6 +19,8 @@ target 'TodoApp' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  pod 'RNCAsyncStorage', :path => '../node_modules/@react-native-async-storage/async-storage'
+
   target 'TodoAppTests' do
     inherit! :complete
     # Pods for testing
