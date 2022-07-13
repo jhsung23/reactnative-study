@@ -1,5 +1,5 @@
 import React, {useContext} from 'react';
-import {StyleSheet, View, Text} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import EmptySearchResult from '../components/EmptySearchResult';
 import FeedList from '../components/FeedList';
 import LogContext from '../contexts/LogContext';
