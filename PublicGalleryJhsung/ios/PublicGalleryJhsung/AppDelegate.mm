@@ -36,6 +36,10 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
     [FIRApp configure];
   }
 
+  #ifdef FB_SONARKIT_ENABLED
+    initializeFlipper(application);
+  #endif
+
   RCTAppSetupPrepareApp(application);
 
   RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -26,6 +26,9 @@ function SignInScreen({navigation, route}) {
     console.log(form);
   };
 
+  const passwordRef = useRef();
+  const confirmPasswordRef = useRef();
+
   return (
     <KeyboardAvoidingView
       style={styles.KeyboardAvoidingView}
@@ -48,13 +51,14 @@ function SignInScreen({navigation, route}) {
             hasMarginBottom={isSignUp}
             value={form.password}
             onChangeText={createChangeTextHandler('password')}
-            secureTextEntry={true}
+            secureTextEntry
           />
           {isSignUp && (
             <BorderedInput
               placeholder="비밀번호 확인"
               value={form.confirmPassword}
               onChangeText={createChangeTextHandler('confirmPassword')}
+              secureTextEntry
             />
           )}
           <View style={styles.buttons}>
