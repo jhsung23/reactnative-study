@@ -1,5 +1,6 @@
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -8,8 +9,11 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import BorderedInput from '../components/BorderedInput';
-import CustomButton from '../components/CustomButton';
+import SignButtons from '../components/SignButton';
+import SignInForm from '../components/SignInForm';
+import {signIn, signUp} from '../lib/auth';
+import {getUser} from '../lib/users';
+import {useUserContext} from '../contexts/UserContext';
 
 function SignInScreen({navigation, route}) {
   const {isSignUp} = route.params ?? {};
@@ -18,16 +22,47 @@ function SignInScreen({navigation, route}) {
     password: '',
     confirmPassword: '',
   });
+  const [loading, setLoading] = useState();
+  const {setUser} = useUserContext();
+
   const createChangeTextHandler = name => value => {
     setForm({...form, [name]: value});
   };
-  const onSubmit = () => {
-    Keyboard.dismiss();
-    console.log(form);
-  };
 
-  const passwordRef = useRef();
-  const confirmPasswordRef = useRef();
+  const onSubmit = async () => {
+    Keyboard.dismiss();
+    const {email, password, confirmPassword} = form;
+
+    if (isSignUp && password !== confirmPassword) {
+      Alert.alert('실패', '비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    setLoading(true);
+    const info = {email, password};
+
+    try {
+      const {user} = isSignUp ? await signUp(info) : await signIn(info);
+      const profile = await getUser(user.uid);
+      if (!profile) {
+        navigation.navigate('Welcome', {uid: user.uid});
+      } else {
+        setUser(profile);
+      }
+    } catch (e) {
+      const messages = {
+        'auth/email-already-in-use': '이미 가입된 이메일입니다.',
+        'auth/wrong-password': '잘못된 비밀번호 입니다.',
+        'auth/user-not-found': '존재하지 않는 계정입니다.',
+        'auth/invalid-email': '유효하지 않은 이메일 주소입니다.',
+      };
+      const msg = messages[e.code] || `${isSignUp ? '가입' : '로그인'} 실패`;
+      console.log(e.code);
+      Alert.alert('실패', msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -36,64 +71,17 @@ function SignInScreen({navigation, route}) {
       <SafeAreaView style={styles.fullscreen}>
         <Text style={styles.text}>PublicGallery</Text>
         <View style={styles.form}>
-          <BorderedInput
-            hasMarginBottom
-            placeholder="이메일"
-            value={form.email}
-            onChangeText={createChangeTextHandler('email')}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoCompleteType="email"
-            keyboardType="email-address"
+          <SignInForm
+            isSignUp={isSignUp}
+            onSubmit={onSubmit}
+            form={form}
+            createChangeTextHandler={createChangeTextHandler}
           />
-          <BorderedInput
-            placeholder="비밀번호"
-            hasMarginBottom={isSignUp}
-            value={form.password}
-            onChangeText={createChangeTextHandler('password')}
-            secureTextEntry
+          <SignButtons
+            isSignUp={isSignUp}
+            onSubmit={onSubmit}
+            loading={loading}
           />
-          {isSignUp && (
-            <BorderedInput
-              placeholder="비밀번호 확인"
-              value={form.confirmPassword}
-              onChangeText={createChangeTextHandler('confirmPassword')}
-              secureTextEntry
-            />
-          )}
-          <View style={styles.buttons}>
-            {isSignUp ? (
-              <>
-                <CustomButton
-                  title="회원가입"
-                  hasMarginBottom
-                  onPress={onSubmit}
-                />
-                <CustomButton
-                  title="로그인"
-                  theme="secondary"
-                  onPress={() => {
-                    navigation.goBack();
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <CustomButton
-                  title="로그인"
-                  hasMarginBottom
-                  onPress={onSubmit}
-                />
-                <CustomButton
-                  title="회원가입"
-                  theme="secondary"
-                  onPress={() => {
-                    navigation.push('SignIn', {isSignUp: true});
-                  }}
-                />
-              </>
-            )}
-          </View>
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -117,9 +105,6 @@ const styles = StyleSheet.create({
     marginTop: 64,
     width: '100%',
     paddingHorizontal: 16,
-  },
-  buttons: {
-    marginTop: 64,
   },
 });
 
